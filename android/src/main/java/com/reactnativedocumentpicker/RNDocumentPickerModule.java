@@ -128,7 +128,8 @@ public class RNDocumentPickerModule extends NativeDocumentPickerSpec {
     try {
       Intent intent = new Intent(Intent.ACTION_GET_CONTENT);
       intent.addCategory(Intent.CATEGORY_OPENABLE);
-
+			intent.addFlags(Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION);
+			intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
       intent.setType("*/*");
       if (!args.isNull(OPTION_TYPE)) {
         ReadableArray types = args.getArray(OPTION_TYPE);
@@ -166,6 +167,8 @@ public class RNDocumentPickerModule extends NativeDocumentPickerSpec {
     this.promise = promise;
     try {
       Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT_TREE);
+      intent.addFlags(Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION);
+			intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
       currentActivity.startActivityForResult(intent, PICK_DIR_REQUEST_CODE, null);
     } catch (Exception e) {
       sendError(E_FAILED_TO_SHOW_PICKER, "Failed to create directory picker", e);
@@ -195,6 +198,9 @@ public class RNDocumentPickerModule extends NativeDocumentPickerSpec {
   }
 
   public void onShowActivityResult(int resultCode, Intent data, Promise promise) {
+
+    Activity currentActivity = getCurrentActivity();
+
     if (resultCode != Activity.RESULT_OK) {
       sendError(E_UNKNOWN_ACTIVITY_RESULT, "Unknown activity result: " + resultCode);
       return;
@@ -214,9 +220,11 @@ public class RNDocumentPickerModule extends NativeDocumentPickerSpec {
         final int length = clipData.getItemCount();
         for (int i = 0; i < length; ++i) {
           ClipData.Item item = clipData.getItemAt(i);
+          currentActivity.getContentResolver().takePersistableUriPermission(item.getUri(), Intent.FLAG_GRANT_READ_URI_PERMISSION);
           uris.add(item.getUri());
         }
       } else if (uri != null) {
+        currentActivity.getContentResolver().takePersistableUriPermission(uri, Intent.FLAG_GRANT_READ_URI_PERMISSION);
         uris.add(uri);
       } else {
         sendError(E_INVALID_DATA_RETURNED, "Invalid data returned by intent");
